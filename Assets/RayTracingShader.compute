@@ -16,6 +16,13 @@ struct Ray
     float3 direction;
 };
 
+struct RayHit
+{
+    float3 position;
+    float distance;
+    float3 normal;
+};
+
 Ray GetRay(float2 uv)
 {
     Ray ray;
@@ -30,6 +37,33 @@ Ray GetRay(float2 uv)
     ray.direction = normalize(ray.direction);
 
     return ray;
+}
+
+void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
+{
+    // Calculate distance along the ray where the ground plane is intersected
+    float t = -ray.origin.y / ray.direction.y;
+    if (t > 0 && t < bestHit.distance)
+    {
+        bestHit.distance = t;
+        bestHit.position = ray.origin + t * ray.direction;
+        bestHit.normal = float3(0.0f, 1.0f, 0.0f);
+    }
+}
+
+void IntersectSphere(Ray ray, inout RayHit bestHit, float4 sphere)
+{
+    // Calculate distance along the ray where the sphere is intersected
+    float3 d = ray.origin - sphere.xyz;
+    float p1 = -dot(ray.direction, d);
+    float p2 = sqrt(p1 * p1 - dot(d, d) + sphere.w * sphere.w);
+    float t = p1 - p2 > 0 ? p1 - p2 : (p1 + p2 ? p1 + p2 : -1.0f);
+    if (t > 0 && t < bestHit.distance)
+    {
+        bestHit.distance = t;
+        bestHit.position = ray.origin + t * ray.direction;
+        bestHit.normal = normalize(bestHit.position - sphere.xyz);
+    }
 }
 
 [numthreads(8,8,1)]
@@ -48,8 +82,26 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // Write some colors
     //Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
 
-    // Sample the skybox and write it
-    float theta = acos(ray.direction.y) / -PI;
-    float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-    Result[id.xy] = _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0);
+    // Intialize an invalid hit result
+    RayHit bestHit;
+    bestHit.position = float3(0.0f, 0.0f, 0.0f);
+    bestHit.distance = 1.#INF;
+    bestHit.normal = float3(0.0f, 0.0f, 0.0f);
+
+    // Trace the ray
+    IntersectGroundPlane(ray, bestHit);
+    IntersectSphere(ray, bestHit, float4(0.0f, 3.0f, 0.0f, 3.0f));
+
+    // Return some colorful information
+    if (bestHit.distance < 1.#INF)
+    {
+        Result[id.xy] = float4(bestHit.normal * 0.5f + 0.5f, 1.0f);
+    }
+    else
+    {
+        // Sample the skybox and write it
+        float theta = acos(ray.direction.y) / -PI;
+        float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
+        Result[id.xy] = _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0);
+    }
 }
