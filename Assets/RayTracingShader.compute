@@ -1,0 +1,45 @@
+﻿#pragma kernel CSMain
+
+RWTexture2D<float4> Result;
+
+float4x4 _CameraToWorld;
+float4x4 _CameraInverseProjection;
+
+struct Ray
+{
+    float3 origin;
+    float3 direction;
+};
+
+Ray GetRay(float2 uv)
+{
+    Ray ray;
+
+    // Transform the camera origin to world space
+    ray.origin = mul(_CameraToWorld, float4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
+    
+    // Invert the perspective projection of the view-space position
+    ray.direction = mul(_CameraInverseProjection, float4(uv, 0.0f, 1.0f)).xyz;
+    // Transform the direction from camera to world space and normalize
+    ray.direction = mul(_CameraToWorld, float4(ray.direction, 0.0f)).xyz;
+    ray.direction = normalize(ray.direction);
+
+    return ray;
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // Get the dimensions of the RenderTexture
+    uint width, height;
+    Result.GetDimensions(width, height);
+
+    // Transform pixel to [-1,1] range
+    float2 uv = float2(id.xy / float2(width, height) * 2.0f - 1.0f);
+
+    // Get a ray for the UVs
+    Ray ray = GetRay(uv);
+
+    // Write some colors
+    Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
+}
