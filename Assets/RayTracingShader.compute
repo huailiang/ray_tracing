@@ -10,11 +10,43 @@ SamplerState sampler_SkyboxTexture;
 
 static const float PI = 3.14159265f;
 
+
+//-------------------------------------
+//- RAY
+
 struct Ray
 {
     float3 origin;
     float3 direction;
+    float3 energy;
 };
+
+Ray CreateRay(float3 origin, float3 direction)
+{
+    Ray ray;
+    ray.origin = origin;
+    ray.direction = direction;
+    ray.energy = float3(1.0f, 1.0f, 1.0f);
+    return ray;
+}
+
+Ray CreateCameraRay(float2 uv)
+{
+    // Transform the camera origin to world space
+    float3 origin = mul(_CameraToWorld, float4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
+    
+    // Invert the perspective projection of the view-space position
+    float3 direction = mul(_CameraInverseProjection, float4(uv, 0.0f, 1.0f)).xyz;
+    // Transform the direction from camera to world space and normalize
+    direction = mul(_CameraToWorld, float4(direction, 0.0f)).xyz;
+    direction = normalize(direction);
+
+    return CreateRay(origin, direction);
+}
+
+
+//-------------------------------------
+//- RAYHIT
 
 struct RayHit
 {
@@ -23,21 +55,18 @@ struct RayHit
     float3 normal;
 };
 
-Ray GetRay(float2 uv)
+RayHit CreateRayHit()
 {
-    Ray ray;
-
-    // Transform the camera origin to world space
-    ray.origin = mul(_CameraToWorld, float4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
-    
-    // Invert the perspective projection of the view-space position
-    ray.direction = mul(_CameraInverseProjection, float4(uv, 0.0f, 1.0f)).xyz;
-    // Transform the direction from camera to world space and normalize
-    ray.direction = mul(_CameraToWorld, float4(ray.direction, 0.0f)).xyz;
-    ray.direction = normalize(ray.direction);
-
-    return ray;
+    RayHit hit;
+    hit.position = float3(0.0f, 0.0f, 0.0f);
+    hit.distance = 1.#INF;
+    hit.normal = float3(0.0f, 0.0f, 0.0f);
+    return hit;
 }
+
+
+//-------------------------------------
+//- INTERSECTION
 
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 {
@@ -66,6 +95,53 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, float4 sphere)
     }
 }
 
+
+//-------------------------------------
+//- TRACE
+
+RayHit Trace(Ray ray)
+{
+    RayHit bestHit = CreateRayHit();
+    IntersectGroundPlane(ray, bestHit);
+    int n = 18;
+    for (int i = -n; i <= n; ++i)
+        for (int j = -n; j <= n; ++j)
+            IntersectSphere(ray, bestHit, float4(i * 10.0f, 3.0f, j * 10.0f, 3.0f));
+    return bestHit;
+}
+
+
+//-------------------------------------
+//- SHADE
+
+float3 Shade(inout Ray ray, RayHit hit)
+{
+    if (hit.distance < 1.#INF)
+    {
+        // Reflect the ray and multiply energy with specular reflection
+        ray.origin = hit.position + hit.normal * 0.001f;
+        ray.direction = reflect(ray.direction, hit.normal);
+        ray.energy *= 0.65f;
+
+        // Return a solid diffuse color
+        return float3(0.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        // Erase the ray's energy - the sky doesn't reflect anything
+        ray.energy = 0.0f;
+
+        // Sample the skybox and write it
+        float theta = acos(ray.direction.y) / -PI;
+        float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
+        return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * 1.8f;
+    }
+}
+
+
+//-------------------------------------
+//- KERNEL
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -77,31 +153,21 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float2 uv = float2(id.xy / float2(width, height) * 2.0f - 1.0f);
 
     // Get a ray for the UVs
-    Ray ray = GetRay(uv);
+    Ray ray = CreateCameraRay(uv);
 
     // Write some colors
     //Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
 
-    // Intialize an invalid hit result
-    RayHit bestHit;
-    bestHit.position = float3(0.0f, 0.0f, 0.0f);
-    bestHit.distance = 1.#INF;
-    bestHit.normal = float3(0.0f, 0.0f, 0.0f);
-
-    // Trace the ray
-    IntersectGroundPlane(ray, bestHit);
-    IntersectSphere(ray, bestHit, float4(0.0f, 3.0f, 0.0f, 3.0f));
-
-    // Return some colorful information
-    if (bestHit.distance < 1.#INF)
+    // Trace and shade the ray
+    float3 result = float3(0, 0, 0);
+    for (int i = 0; i < 8; ++i)
     {
-        Result[id.xy] = float4(bestHit.normal * 0.5f + 0.5f, 1.0f);
+        RayHit hit = Trace(ray);
+        result += ray.energy * Shade(ray, hit);
+
+        if (!any(ray.energy))
+            break;
     }
-    else
-    {
-        // Sample the skybox and write it
-        float theta = acos(ray.direction.y) / -PI;
-        float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-        Result[id.xy] = _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0);
-    }
+
+    Result[id.xy] = float4(result, 1);
 }
