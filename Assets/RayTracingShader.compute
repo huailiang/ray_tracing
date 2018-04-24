@@ -5,6 +5,8 @@ RWTexture2D<float4> Result;
 float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
 
+float4 _DirectionalLight;
+
 Texture2D<float4> _SkyboxTexture;
 SamplerState sampler_SkyboxTexture;
 
@@ -118,13 +120,25 @@ float3 Shade(inout Ray ray, RayHit hit)
 {
     if (hit.distance < 1.#INF)
     {
+        float3 specular = float3(0.04f, 0.04f, 0.04f);
+        float3 diffuse = min(1.0f - specular, float3(0.8f, 0.8f, 0.8f));
+
         // Reflect the ray and multiply energy with specular reflection
         ray.origin = hit.position + hit.normal * 0.001f;
         ray.direction = reflect(ray.direction, hit.normal);
-        ray.energy *= 0.65f;
+        ray.energy *= specular;
 
-        // Return a solid diffuse color
-        return float3(0.0f, 0.0f, 0.0f);
+        // Shadow test ray
+        bool shadow = false;
+        Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, _DirectionalLight.xyz);
+        RayHit shadowHit = Trace(shadowRay);
+        if (shadowHit.distance != 1.#INF)
+        {
+            return float3(0.0f, 0.0f, 0.0f);
+        }
+
+        // Return a shaded diffuse color
+        return saturate(dot(hit.normal, _DirectionalLight.xyz)) * _DirectionalLight.w * diffuse;
     }
     else
     {
@@ -154,9 +168,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     // Get a ray for the UVs
     Ray ray = CreateCameraRay(uv);
-
-    // Write some colors
-    //Result[id.xy] = float4(ray.direction * 0.5f + 0.5f, 1.0f);
 
     // Trace and shade the ray
     float3 result = float3(0, 0, 0);
