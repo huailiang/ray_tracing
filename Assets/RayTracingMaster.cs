@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class RayTracingMaster : MonoBehaviour
 {
@@ -6,22 +7,109 @@ public class RayTracingMaster : MonoBehaviour
     public Texture SkyboxTexture;
     public Light DirectionalLight;
 
+    [Header("Spheres")]
+    public Vector2 SphereRadius = new Vector2(3.0f, 8.0f);
+    public uint SpheresMax = 100;
+    public float SpherePlacementRadius = 100.0f;
+
     private Camera _camera;
+    private float _lastFieldOfView;
     private RenderTexture _target;
     private Material _addMaterial;
     private uint _currentSample = 0;
+    private ComputeBuffer _sphereBuffer;
+    private List<Transform> _transformsToWatch = new List<Transform>();
+
+    struct Sphere
+    {
+        public Vector3 position;
+        public float radius;
+        public Vector3 albedo;
+        public float _pad0;
+        public Vector3 specular;
+        public float _pad1;
+    }
 
     private void Awake()
     {
         _camera = GetComponent<Camera>();
+
+        _transformsToWatch.Add(transform);
+        _transformsToWatch.Add(DirectionalLight.transform);
+    }
+
+    private void OnEnable()
+    {
+        _currentSample = 0;
+        SetUpScene();
+    }
+
+    private void OnDisable()
+    {
+        if (_sphereBuffer != null)
+            _sphereBuffer.Release();
     }
 
     private void Update()
     {
-        if (transform.hasChanged)
+        if (_camera.fieldOfView != _lastFieldOfView)
         {
             _currentSample = 0;
-            transform.hasChanged = false;
+            _lastFieldOfView = _camera.fieldOfView;
+        }
+
+        foreach (Transform t in _transformsToWatch)
+        {
+            if (t.hasChanged)
+            {
+                _currentSample = 0;
+                t.hasChanged = false;
+            }
+        }
+    }
+
+    private void SetUpScene()
+    {
+        List<Sphere> spheres = new List<Sphere>();
+
+        // Add a number of random spheres
+        for (int i = 0; i < SpheresMax; ++i)
+        {
+            Sphere sphere = new Sphere();
+
+            // Radius and radius
+            sphere.radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
+            Vector2 randomPos = Random.insideUnitCircle * SpherePlacementRadius;
+            sphere.position = new Vector3(randomPos.x, sphere.radius, randomPos.y);
+
+            // Reject spheres that are intersecting others
+            foreach (Sphere other in spheres)
+            {
+                float minDist = sphere.radius + other.radius;
+                if (Vector3.SqrMagnitude(sphere.position - other.position) < minDist * minDist)
+                    goto SkipSphere;
+            }
+
+            // Albedo and specular color
+            Color color = Random.ColorHSV();
+            bool metal = Random.value < 0.5f;
+            sphere.albedo = metal ? Vector4.zero : new Vector4(color.r, color.g, color.b);
+            sphere.specular = metal ? new Vector4(color.r, color.g, color.b) : new Vector4(0.04f, 0.04f, 0.04f);
+
+            // Add the sphere to the list
+            spheres.Add(sphere);
+
+        SkipSphere:
+            continue;
+        }
+
+        // Assign to compute buffer
+        if (_sphereBuffer != null)
+            _sphereBuffer.Release();
+        if (spheres.Count > 0)
+        {
+            _sphereBuffer = new ComputeBuffer(spheres.Count, 48);
+            _sphereBuffer.SetData(spheres);
         }
     }
 
@@ -34,6 +122,9 @@ public class RayTracingMaster : MonoBehaviour
 
         Vector3 l = DirectionalLight.transform.forward * -1.0f;
         RayTracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
+
+        if (_sphereBuffer != null)
+            RayTracingShader.SetBuffer(0, "_Spheres", _sphereBuffer);
     }
 
     private void InitRenderTexture()
@@ -70,7 +161,7 @@ public class RayTracingMaster : MonoBehaviour
         _addMaterial.SetFloat("_Sample", _currentSample);
         Graphics.Blit(_target, destination, _addMaterial);
         _currentSample++;
-}
+    }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
