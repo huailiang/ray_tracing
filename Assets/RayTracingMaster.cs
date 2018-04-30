@@ -99,7 +99,7 @@ public class RayTracingMaster : MonoBehaviour
             // Add the sphere to the list
             spheres.Add(sphere);
 
-        SkipSphere:
+            SkipSphere:
             continue;
         }
 
@@ -155,7 +155,7 @@ public class RayTracingMaster : MonoBehaviour
         RayTracingShader.SetTexture(0, "Result", _target);
         RayTracingShader.Dispatch(0, (Screen.width - 1) / 8 + 1, (Screen.height - 1) / 8 + 1, 1);
 
-        // Blit the result texture to the screen and release it
+        // Blit the result texture to the screen
         if (_addMaterial == null)
             _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
         _addMaterial.SetFloat("_Sample", _currentSample);
