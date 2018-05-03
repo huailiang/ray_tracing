@@ -73,7 +73,7 @@ public class RayTracingMaster : MonoBehaviour
         List<Sphere> spheres = new List<Sphere>();
 
         // Add a number of random spheres
-        for (int i = 0; i < SpheresMax; ++i)
+        for (int i = 0; i < SpheresMax; i++)
         {
             Sphere sphere = new Sphere();
 
@@ -120,7 +120,7 @@ public class RayTracingMaster : MonoBehaviour
         RayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         RayTracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
 
-        Vector3 l = DirectionalLight.transform.forward * -1.0f;
+        Vector3 l = DirectionalLight.transform.forward;
         RayTracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
 
         if (_sphereBuffer != null)
