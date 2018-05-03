@@ -165,7 +165,7 @@ float3 Shade(inout Ray ray, RayHit hit)
         }
 
         // Return a diffuse-shaded color
-        return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * min(1.0f - hit.specular, hit.albedo);
+        return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * hit.albedo;
     }
     else
     {

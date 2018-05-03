@@ -41,7 +41,7 @@
 			sampler2D _MainTex;
 			float _Sample;
 
-			fixed4 frag (v2f i) : SV_Target
+			float4 frag (v2f i) : SV_Target
 			{
 				return float4(tex2D(_MainTex, i.uv).rgb, 1.0f / (_Sample + 1.0f));
 			}
