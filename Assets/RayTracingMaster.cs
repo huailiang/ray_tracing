@@ -25,9 +25,7 @@ public class RayTracingMaster : MonoBehaviour
         public Vector3 position;
         public float radius;
         public Vector3 albedo;
-        public float _pad0;
         public Vector3 specular;
-        public float _pad1;
     }
 
     private void Awake()
@@ -108,7 +106,7 @@ public class RayTracingMaster : MonoBehaviour
             _sphereBuffer.Release();
         if (spheres.Count > 0)
         {
-            _sphereBuffer = new ComputeBuffer(spheres.Count, 48);
+            _sphereBuffer = new ComputeBuffer(spheres.Count, 40);
             _sphereBuffer.SetData(spheres);
         }
     }

@@ -19,9 +19,7 @@ struct Sphere
     float3 position;
     float radius;
     float3 albedo;
-    float _pad0;
     float3 specular;
-    float _pad1;
 };
 
 StructuredBuffer<Sphere> _Spheres;
