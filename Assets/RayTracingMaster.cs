@@ -8,6 +8,7 @@ public class RayTracingMaster : MonoBehaviour
     public Light DirectionalLight;
 
     [Header("Spheres")]
+    public int SphereSeed;
     public Vector2 SphereRadius = new Vector2(3.0f, 8.0f);
     public uint SpheresMax = 100;
     public float SpherePlacementRadius = 100.0f;
@@ -69,6 +70,7 @@ public class RayTracingMaster : MonoBehaviour
 
     private void SetUpScene()
     {
+        Random.InitState(SphereSeed);
         List<Sphere> spheres = new List<Sphere>();
 
         // Add a number of random spheres
