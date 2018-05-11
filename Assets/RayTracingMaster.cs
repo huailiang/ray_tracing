@@ -15,6 +15,7 @@ public class RayTracingMaster : MonoBehaviour
     private Camera _camera;
     private float _lastFieldOfView;
     private RenderTexture _target;
+    private RenderTexture _converged;
     private Material _addMaterial;
     private uint _currentSample = 0;
     private ComputeBuffer _sphereBuffer;
@@ -117,6 +118,7 @@ public class RayTracingMaster : MonoBehaviour
         RayTracingShader.SetMatrix("_CameraToWorld", _camera.cameraToWorldMatrix);
         RayTracingShader.SetMatrix("_CameraInverseProjection", _camera.projectionMatrix.inverse);
         RayTracingShader.SetVector("_PixelOffset", new Vector2(Random.value, Random.value));
+        RayTracingShader.SetFloat("_Seed", Random.value);
 
         Vector3 l = DirectionalLight.transform.forward;
         RayTracingShader.SetVector("_DirectionalLight", new Vector4(l.x, l.y, l.z, DirectionalLight.intensity));
@@ -131,13 +133,20 @@ public class RayTracingMaster : MonoBehaviour
         {
             // Release render texture if we already have one
             if (_target != null)
+            {
                 _target.Release();
+                _converged.Release();
+            }
 
             // Get a render target for Ray Tracing
             _target = new RenderTexture(Screen.width, Screen.height, 0,
                 RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
             _target.enableRandomWrite = true;
             _target.Create();
+            _converged = new RenderTexture(Screen.width, Screen.height, 0,
+                RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+            _converged.enableRandomWrite = true;
+            _converged.Create();
 
             // Reset sampling
             _currentSample = 0;
@@ -159,7 +168,8 @@ public class RayTracingMaster : MonoBehaviour
         if (_addMaterial == null)
             _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
         _addMaterial.SetFloat("_Sample", _currentSample);
-        Graphics.Blit(_target, destination, _addMaterial);
+        Graphics.Blit(_target, _converged, _addMaterial);
+        Graphics.Blit(_converged, destination);
         _currentSample++;
     }
 
