@@ -159,6 +159,40 @@ RayHit Trace(Ray ray)
 
 
 //-------------------------------------
+//- SAMPLING
+
+void GetTangentSpace(float3 normal, out float3 tangent, out float3 binormal)
+{
+    // Choose the least significant direction for the cross product
+    float3 helper = float3(0, 0, 1);
+    if (normal.x < normal.y && normal.x < normal.z)
+        helper = float3(1, 0, 0);
+    else if (normal.y < normal.x && normal.y < normal.z)
+        helper = float3(0, 1, 0);
+
+    // Generate vectors
+    tangent = normalize(cross(normal, helper));
+    binormal = normalize(cross(normal, tangent));
+}
+
+float3 SampleHemisphereUniform(float3 normal)
+{
+    // Get the tangent space vectors
+    float3 tangent, binormal;
+    GetTangentSpace(normal, tangent, binormal);
+
+    // Uniformly sample hemisphere direction
+    float phi = 2 * PI * rand();
+    float cosTheta = rand();
+    float sinTheta = sqrt(max(0.0f, 1.0f - cosTheta * cosTheta));
+    float3 tangentSpaceDir = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+    // Transform direction to world space
+    return mul(tangentSpaceDir, float3x3(tangent, binormal, normal));
+}
+
+
+//-------------------------------------
 //- SHADE
 
 float3 Shade(inout Ray ray, RayHit hit)
@@ -190,7 +224,7 @@ float3 Shade(inout Ray ray, RayHit hit)
         // Sample the skybox and write it
         float theta = acos(ray.direction.y) / -PI;
         float phi = atan2(ray.direction.x, -ray.direction.z) / -PI * 0.5f;
-        return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz * 1.8f;
+        return _SkyboxTexture.SampleLevel(sampler_SkyboxTexture, float2(phi, theta), 0).xyz;
     }
 }
 
