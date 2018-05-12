@@ -22,6 +22,11 @@ float sdot(float3 x, float3 y)
     return saturate(dot(x, y));
 }
 
+float energy(float3 color)
+{
+    return dot(color, 1.0f / 3.0f);
+}
+
 //-------------------------------------
 //- RANDOMNESS
 
@@ -202,15 +207,34 @@ float3 Shade(inout Ray ray, RayHit hit)
 {
     if (hit.distance < 1.#INF)
     {
-        // Phong shading
-        ray.origin = hit.position + hit.normal * 0.001f;
-        float3 reflected = reflect(ray.direction, hit.normal);
-        ray.direction = SampleHemisphereUniform(hit.normal);
-        float3 diffuse = 2 * min(1.0f - hit.specular, hit.albedo);
-        float alpha = 300.0f;
-        float3 specular = hit.specular * (alpha + 2) * pow(sdot(ray.direction, reflected), alpha);
-        ray.energy *= (diffuse + specular) * sdot(hit.normal, ray.direction);
-        return float3(0.0f, 0.0f, 0.0f);
+        // Calculate chances of diffuse and specular reflection
+        hit.albedo = min(1.0f - hit.specular, hit.albedo);
+        float specChance = energy(hit.specular);
+        float diffChance = energy(hit.albedo);
+
+        // Roulette-select the ray's path
+        float roulette = rand();
+        if (roulette < specChance)
+        {
+            // Specular reflection
+            ray.origin = hit.position + hit.normal * 0.001f;
+            ray.direction = reflect(ray.direction, hit.normal);
+            ray.energy *= (1.0f / specChance) * hit.specular * sdot(hit.normal, ray.direction);
+        }
+        else if (roulette < specChance + diffChance)
+        {
+            // Diffuse reflection
+            ray.origin = hit.position + hit.normal * 0.001f;
+            ray.direction = SampleHemisphereUniform(hit.normal);
+            ray.energy *= (1.0f / diffChance) * 2 * hit.albedo * sdot(hit.normal, ray.direction);
+        }
+        else
+        {
+            // Terminate ray
+            ray.energy = 0.0f;
+        }
+
+        return 0.0f;
     }
     else
     {
