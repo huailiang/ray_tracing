@@ -15,6 +15,14 @@ SamplerState sampler_SkyboxTexture;
 static const float PI = 3.14159265f;
 
 //-------------------------------------
+//- UTILITY
+
+float sdot(float3 x, float3 y)
+{
+    return saturate(dot(x, y));
+}
+
+//-------------------------------------
 //- RANDOMNESS
 
 float2 _Pixel;
@@ -112,7 +120,7 @@ void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
         bestHit.distance = t;
         bestHit.position = ray.origin + t * ray.direction;
         bestHit.normal = float3(0.0f, 1.0f, 0.0f);
-        bestHit.albedo = 0.8f;
+        bestHit.albedo = 0.5f;
         bestHit.specular = 0.03f;
     }
 }
@@ -161,26 +169,21 @@ RayHit Trace(Ray ray)
 //-------------------------------------
 //- SAMPLING
 
-void GetTangentSpace(float3 normal, out float3 tangent, out float3 binormal)
+float3x3 GetTangentSpace(float3 normal)
 {
-    // Choose the least significant direction for the cross product
-    float3 helper = float3(0, 0, 1);
-    if (normal.x < normal.y && normal.x < normal.z)
-        helper = float3(1, 0, 0);
-    else if (normal.y < normal.x && normal.y < normal.z)
-        helper = float3(0, 1, 0);
+    // Choose a helper vector for the cross product
+    float3 helper = float3(1, 0, 0);
+    if (abs(normal.x) > 0.99f)
+        helper = float3(0, 0, 1);
 
     // Generate vectors
-    tangent = normalize(cross(normal, helper));
-    binormal = normalize(cross(normal, tangent));
+    float3 tangent = normalize(cross(normal, helper));
+    float3 binormal = normalize(cross(normal, tangent));
+    return float3x3(tangent, binormal, normal);
 }
 
 float3 SampleHemisphereUniform(float3 normal)
 {
-    // Get the tangent space vectors
-    float3 tangent, binormal;
-    GetTangentSpace(normal, tangent, binormal);
-
     // Uniformly sample hemisphere direction
     float phi = 2 * PI * rand();
     float cosTheta = rand();
@@ -188,7 +191,7 @@ float3 SampleHemisphereUniform(float3 normal)
     float3 tangentSpaceDir = float3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 
     // Transform direction to world space
-    return mul(tangentSpaceDir, float3x3(tangent, binormal, normal));
+    return mul(tangentSpaceDir, GetTangentSpace(normal));
 }
 
 
@@ -199,22 +202,15 @@ float3 Shade(inout Ray ray, RayHit hit)
 {
     if (hit.distance < 1.#INF)
     {
-        // Reflect the ray and multiply energy with specular reflection
+        // Phong shading
         ray.origin = hit.position + hit.normal * 0.001f;
-        ray.direction = reflect(ray.direction, hit.normal);
-        ray.energy *= hit.specular;
-
-        // Shadow test ray
-        bool shadow = false;
-        Ray shadowRay = CreateRay(hit.position + hit.normal * 0.001f, -1 * _DirectionalLight.xyz);
-        RayHit shadowHit = Trace(shadowRay);
-        if (shadowHit.distance != 1.#INF)
-        {
-            return float3(0.0f, 0.0f, 0.0f);
-        }
-
-        // Return a diffuse-shaded color
-        return saturate(dot(hit.normal, _DirectionalLight.xyz) * -1) * _DirectionalLight.w * hit.albedo;
+        float3 reflected = reflect(ray.direction, hit.normal);
+        ray.direction = SampleHemisphereUniform(hit.normal);
+        float3 diffuse = 2 * min(1.0f - hit.specular, hit.albedo);
+        float alpha = 300.0f;
+        float3 specular = hit.specular * (alpha + 2) * pow(sdot(ray.direction, reflected), alpha);
+        ray.energy *= (diffuse + specular) * sdot(hit.normal, ray.direction);
+        return float3(0.0f, 0.0f, 0.0f);
     }
     else
     {
