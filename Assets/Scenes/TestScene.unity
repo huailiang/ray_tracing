@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028557, g: 0.22571576, b: 0.30692413, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028536, g: 0.22571537, b: 0.3069239, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -125,7 +125,6 @@ GameObject:
   - component: {fileID: 45495469}
   - component: {fileID: 45495468}
   - component: {fileID: 45495467}
-  - component: {fileID: 45495466}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -146,17 +145,6 @@ Transform:
   m_Father: {fileID: 2138683536}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &45495466
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 45495464}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40aa27646059aa84a89b5913d6fecf8f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &45495467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,12 +159,10 @@ MonoBehaviour:
   RayTracingShader: {fileID: 7200000, guid: b703a4c4d92c3f2418c07a66781bc54c, type: 3}
   SkyboxTexture: {fileID: 2800000, guid: 047cc8c0e5809f14bbc66dbf01063372, type: 3}
   DirectionalLight: {fileID: 491017451}
-  MaxSamples: 4096
   SphereSeed: 1223832719
   SphereRadius: {x: 5, y: 30}
   SpheresMax: 10000
   SpherePlacementRadius: 100
-  _currentSample: 0
 --- !u!81 &45495468
 AudioListener:
   m_ObjectHideFlags: 0
