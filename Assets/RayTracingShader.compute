@@ -17,9 +17,9 @@ static const float PI = 3.14159265f;
 //-------------------------------------
 //- UTILITY
 
-float sdot(float3 x, float3 y)
+float sdot(float3 x, float3 y, float f = 1.0f)
 {
-    return saturate(dot(x, y));
+    return saturate(dot(x, y) * f);
 }
 
 float energy(float3 color)
@@ -233,7 +233,8 @@ float3 Shade(inout Ray ray, RayHit hit)
             ray.origin = hit.position + hit.normal * 0.001f;
             float alpha = SmoothnessToPhongAlpha(hit.smoothness);
             ray.direction = SampleHemisphere(reflect(ray.direction, hit.normal), alpha);
-            ray.energy *= (1.0f / specChance) * hit.specular * sdot(hit.normal, ray.direction);
+            float f = (alpha + 2) / (alpha + 1);
+            ray.energy *= (1.0f / specChance) * hit.specular * sdot(hit.normal, ray.direction, f);
         }
         else if (diffChance > 0 && roulette < specChance + diffChance)
         {
