@@ -52,8 +52,8 @@ LightmapSettings:
     m_AlbedoBoost: 1
     m_TemporalCoherenceThreshold: 1
     m_EnvironmentLightingMode: 0
-    m_EnableBakedLightmaps: 1
-    m_EnableRealtimeLightmaps: 1
+    m_EnableBakedLightmaps: 0
+    m_EnableRealtimeLightmaps: 0
   m_LightmapEditorSettings:
     serializedVersion: 10
     m_Resolution: 2
@@ -125,7 +125,6 @@ GameObject:
   - component: {fileID: 45495469}
   - component: {fileID: 45495468}
   - component: {fileID: 45495467}
-  - component: {fileID: 45495466}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -146,17 +145,6 @@ Transform:
   m_Father: {fileID: 2138683536}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &45495466
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 45495464}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40aa27646059aa84a89b5913d6fecf8f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &45495467
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -169,10 +157,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RayTracingShader: {fileID: 7200000, guid: b703a4c4d92c3f2418c07a66781bc54c, type: 3}
-  SkyboxTexture: {fileID: 2800000, guid: a729af1655f756c4381da7ec041611aa, type: 3}
+  SkyboxTexture: {fileID: 2800000, guid: 047cc8c0e5809f14bbc66dbf01063372, type: 3}
   DirectionalLight: {fileID: 491017451}
-  SphereRadius: {x: 5, y: 20}
-  SpheresMax: 1000
+  SphereSeed: 1223832719
+  SphereRadius: {x: 5, y: 30}
+  SpheresMax: 10000
   SpherePlacementRadius: 100
 --- !u!81 &45495468
 AudioListener:
@@ -206,7 +195,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 52
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -310,11 +299,11 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 2138683535}
-  m_LocalRotation: {x: -0.21729738, y: 0.29923582, z: -0.07018511, w: -0.92645234}
-  m_LocalPosition: {x: 0, y: -5, z: 0}
+  m_LocalRotation: {x: 0.07462877, y: 0.92534804, z: -0.2594067, w: 0.2662136}
+  m_LocalPosition: {x: 0, y: -15, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 45495465}
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 26.4, y: -395.8, z: 0}
+  m_LocalEulerAnglesHint: {x: 31.32, y: 147.9, z: 0}
