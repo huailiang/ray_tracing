@@ -59,6 +59,21 @@ StructuredBuffer<Sphere> _Spheres;
 
 
 //-------------------------------------
+//- MESHES
+
+struct MeshObject
+{
+	float4x4 localToWorldMatrix;
+	int indices_offset;
+	int indices_count;
+};
+
+StructuredBuffer<MeshObject> _MeshObjects;
+StructuredBuffer<float3> _Vertices;
+StructuredBuffer<int> _Indices;
+
+
+//-------------------------------------
 //- RAY
 
 struct Ray
@@ -201,42 +216,59 @@ bool IntersectTriangle_MT97(Ray ray, float3 vert0, float3 vert1, float3 vert2,
 	return true;
 }
 
+void IntersectMeshObject(Ray ray, inout RayHit bestHit, MeshObject meshObject)
+{
+	uint offset = meshObject.indices_offset;
+	uint count = offset + meshObject.indices_count;
+	for (uint i = offset; i < count; i += 3)
+	{
+		float3 v0 = (mul(meshObject.localToWorldMatrix, float4(_Vertices[_Indices[i]], 1))).xyz;
+		float3 v1 = (mul(meshObject.localToWorldMatrix, float4(_Vertices[_Indices[i + 1]], 1))).xyz;
+		float3 v2 = (mul(meshObject.localToWorldMatrix, float4(_Vertices[_Indices[i + 2]], 1))).xyz;
+
+		float t, u, v;
+		if (IntersectTriangle_MT97(ray, v0, v1, v2, t, u, v))
+		{
+			if (t > 0 && t < bestHit.distance)
+			{
+				bestHit.distance = t;
+				bestHit.position = ray.origin + t * ray.direction;
+				bestHit.normal = normalize(cross(v1 - v0, v2 - v0));
+				bestHit.albedo = 0.0f;
+				bestHit.specular = 0.65f;
+				bestHit.smoothness = 0.99f;
+				bestHit.emission = 0.0f;
+			}
+		}
+	}
+}
+
 //-------------------------------------
 //- TRACE
 
 RayHit Trace(Ray ray)
 {
-    RayHit bestHit = CreateRayHit();
+	RayHit bestHit = CreateRayHit();
+	uint count, stride, i;
 
-    // Trace ground plane
-    IntersectGroundPlane(ray, bestHit);
+	// Trace ground plane
+	IntersectGroundPlane(ray, bestHit);
 
-    // Trace spheres
-    uint numSpheres, stride;
-    _Spheres.GetDimensions(numSpheres, stride);
-    for (uint i = 0; i < numSpheres; i++)
-        IntersectSphere(ray, bestHit, _Spheres[i]);
-
-	// Trace single triangle
-	float3 v0 = float3(-150, 0, -150);
-	float3 v1 = float3(150, 0, -150);
-	float3 v2 = float3(0, 150 * sqrt(2), -150);
-	float t, u, v;
-	if (IntersectTriangle_MT97(ray, v0, v1, v2, t, u, v))
+	// Trace spheres
+	_Spheres.GetDimensions(count, stride);
+	for (i = 0; i < count; i++)
 	{
-		if (t > 0 && t < bestHit.distance)
-		{
-			bestHit.distance = t;
-			bestHit.position = ray.origin + t * ray.direction;
-			bestHit.normal = normalize(cross(v1 - v0, v2 - v0));
-			bestHit.albedo = 0.00f;
-			bestHit.specular = 0.65f * float3(1, 0.4f, 0.2f);
-			bestHit.smoothness = 0.9f;
-			bestHit.emission = 0.0f;
-		}
+		//IntersectSphere(ray, bestHit, _Spheres[i]);
 	}
 
-    return bestHit;
+	// Trace mesh objects
+	_MeshObjects.GetDimensions(count, stride);
+	for (i = 0; i < count; i++)
+	{
+		IntersectMeshObject(ray, bestHit, _MeshObjects[i]);
+	}
+
+	return bestHit;
 }
 
 
