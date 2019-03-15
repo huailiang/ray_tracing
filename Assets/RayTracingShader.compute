@@ -13,6 +13,7 @@ Texture2D<float4> _SkyboxTexture;
 SamplerState sampler_SkyboxTexture;
 
 static const float PI = 3.14159265f;
+static const float EPSILON = 1e-8;
 
 //-------------------------------------
 //- UTILITY
@@ -160,6 +161,45 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere)
     }
 }
 
+bool IntersectTriangle_MT97(Ray ray, float3 vert0, float3 vert1, float3 vert2,
+	inout float t, inout float u, inout float v)
+{
+	// find vectors for two edges sharing vert0
+	float3 edge1 = vert1 - vert0;
+	float3 edge2 = vert2 - vert0;
+
+	// begin calculating determinant - also used to calculate U parameter
+	float3 pvec = cross(ray.direction, edge2);
+
+	// if determinant is near zero, ray lies in plane of triangle
+	float det = dot(edge1, pvec);
+
+	// use backface culling
+	if (det < EPSILON)
+		return false;
+	float inv_det = 1.0f / det;
+
+	// calculate distance from vert0 to ray origin
+	float3 tvec = ray.origin - vert0;
+
+	// calculate U parameter and test bounds
+	u = dot(tvec, pvec) * inv_det;
+	if (u < 0.0 || u > 1.0f)
+		return false;
+
+	// prepare to test V parameter
+	float3 qvec = cross(tvec, edge1);
+
+	// calculate V parameter and test bounds
+	v = dot(ray.direction, qvec) * inv_det;
+	if (v < 0.0 || u + v > 1.0f)
+		return false;
+
+	// calculate t, ray intersects triangle
+	t = dot(edge2, qvec) * inv_det;
+
+	return true;
+}
 
 //-------------------------------------
 //- TRACE
@@ -176,6 +216,26 @@ RayHit Trace(Ray ray)
     _Spheres.GetDimensions(numSpheres, stride);
     for (uint i = 0; i < numSpheres; i++)
         IntersectSphere(ray, bestHit, _Spheres[i]);
+
+	// Trace single triangle
+	float3 v0 = float3(-150, 0, -150);
+	float3 v1 = float3(150, 0, -150);
+	float3 v2 = float3(0, 150 * sqrt(2), -150);
+	float t, u, v;
+	if (IntersectTriangle_MT97(ray, v0, v1, v2, t, u, v))
+	{
+		if (t > 0 && t < bestHit.distance)
+		{
+			bestHit.distance = t;
+			bestHit.position = ray.origin + t * ray.direction;
+			bestHit.normal = normalize(cross(v1 - v0, v2 - v0));
+			bestHit.albedo = 0.00f;
+			bestHit.specular = 0.65f * float3(1, 0.4f, 0.2f);
+			bestHit.smoothness = 0.9f;
+			bestHit.emission = 0.0f;
+		}
+	}
+
     return bestHit;
 }
 
