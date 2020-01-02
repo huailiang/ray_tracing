@@ -80,7 +80,6 @@ public class RayTracingMaster : MonoBehaviour
         Random.InitState(SphereSeed);
         List<Sphere> spheres = new List<Sphere>();
 
-        // Add a number of random spheres
         for (int i = 0; i < SpheresMax; i++)
         {
             Sphere sphere = new Sphere();
@@ -114,14 +113,12 @@ public class RayTracingMaster : MonoBehaviour
                 sphere.emission = new Vector3(emission.r, emission.g, emission.b);
             }
 
-            // Add the sphere to the list
             spheres.Add(sphere);
 
-            SkipSphere:
+        SkipSphere:
             continue;
         }
 
-        // Assign to compute buffer
         if (_sphereBuffer != null)
             _sphereBuffer.Release();
         if (spheres.Count > 0)
