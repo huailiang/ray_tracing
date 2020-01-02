@@ -146,7 +146,7 @@ public class RayTracingMaster : MonoBehaviour
             // Add the sphere to the list
             spheres.Add(sphere);
 
-            SkipSphere:
+        SkipSphere:
             continue;
         }
 
@@ -220,8 +220,7 @@ public class RayTracingMaster : MonoBehaviour
 
         if (data.Count != 0)
         {
-            // If the buffer has been released or wasn't there to
-            // begin with, create it
+            // If the buffer has been released or wasn't there to begin with, create it
             if (buffer == null)
             {
                 buffer = new ComputeBuffer(data.Count, stride);

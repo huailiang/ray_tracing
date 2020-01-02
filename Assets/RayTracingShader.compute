@@ -15,8 +15,6 @@ SamplerState sampler_SkyboxTexture;
 static const float PI = 3.14159265f;
 static const float EPSILON = 1e-8;
 
-//-------------------------------------
-//- UTILITY
 
 float sdot(float3 x, float3 y, float f = 1.0f)
 {
@@ -28,8 +26,6 @@ float energy(float3 color)
     return dot(color, 1.0f / 3.0f);
 }
 
-//-------------------------------------
-//- RANDOMNESS
 
 float2 _Pixel;
 float _Seed;
@@ -42,8 +38,6 @@ float rand()
 }
 
 
-//-------------------------------------
-//- SPHERES
 
 struct Sphere
 {
@@ -58,8 +52,6 @@ struct Sphere
 StructuredBuffer<Sphere> _Spheres;
 
 
-//-------------------------------------
-//- MESHES
 
 struct MeshObject
 {
@@ -73,8 +65,6 @@ StructuredBuffer<float3> _Vertices;
 StructuredBuffer<int> _Indices;
 
 
-//-------------------------------------
-//- RAY
 
 struct Ray
 {
@@ -107,8 +97,6 @@ Ray CreateCameraRay(float2 uv)
 }
 
 
-//-------------------------------------
-//- RAYHIT
 
 struct RayHit
 {
@@ -134,9 +122,6 @@ RayHit CreateRayHit()
     return hit;
 }
 
-
-//-------------------------------------
-//- INTERSECTION
 
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 {
@@ -243,8 +228,6 @@ void IntersectMeshObject(Ray ray, inout RayHit bestHit, MeshObject meshObject)
 	}
 }
 
-//-------------------------------------
-//- TRACE
 
 RayHit Trace(Ray ray)
 {
@@ -272,8 +255,6 @@ RayHit Trace(Ray ray)
 }
 
 
-//-------------------------------------
-//- SAMPLING
 
 float3x3 GetTangentSpace(float3 normal)
 {
@@ -300,8 +281,6 @@ float3 SampleHemisphere(float3 normal, float alpha)
     return mul(tangentSpaceDir, GetTangentSpace(normal));
 }
 
-//-------------------------------------
-//- SHADE
 
 float SmoothnessToPhongAlpha(float s)
 {
@@ -356,34 +335,32 @@ float3 Shade(inout Ray ray, RayHit hit)
 }
 
 
-//-------------------------------------
-//- KERNEL
 
 [numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    _Pixel = id.xy;
+	_Pixel = id.xy;
 
-    // Get the dimensions of the RenderTexture
-    uint width, height;
-    Result.GetDimensions(width, height);
+	// Get the dimensions of the RenderTexture
+	uint width, height;
+	Result.GetDimensions(width, height);
 
-    // Transform pixel to [-1,1] range
-    float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
+	// Transform pixel to [-1,1] range
+	float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
 
-    // Get a ray for the UVs
-    Ray ray = CreateCameraRay(uv);
+	// Get a ray for the UVs
+	Ray ray = CreateCameraRay(uv);
 
-    // Trace and shade the ray
-    float3 result = float3(0, 0, 0);
-    for (int i = 0; i < 8; i++)
-    {
-        RayHit hit = Trace(ray);
-        result += ray.energy * Shade(ray, hit);
+	// Trace and shade the ray
+	float3 result = float3(0, 0, 0);
+	for (int i = 0; i < 8; i++)
+	{
+		RayHit hit = Trace(ray);
+		result += ray.energy * Shade(ray, hit);
 
-        if (!any(ray.energy))
-            break;
-    }
+		if (!any(ray.energy))
+			break;
+	}
 
-    Result[id.xy] = float4(result, 1);
+	Result[id.xy] = float4(result, 1);
 }
