@@ -69,8 +69,7 @@ public class RayTracingMaster : MonoBehaviour
     private void SetUpScene()
     {
         List<Sphere> spheres = new List<Sphere>();
-
-        // Add a number of random spheres
+        
         for (int i = 0; i < SpheresMax; i++)
         {
             Sphere sphere = new Sphere();
@@ -100,8 +99,7 @@ public class RayTracingMaster : MonoBehaviour
             SkipSphere:
             continue;
         }
-
-        // Assign to compute buffer
+        
         if (_sphereBuffer != null)
             _sphereBuffer.Release();
         if (spheres.Count > 0)
@@ -146,7 +144,6 @@ public class RayTracingMaster : MonoBehaviour
 
     private void Render(RenderTexture destination)
     {
-        // Make sure we have a current render target
         InitRenderTexture();
 
         // Set the target and dispatch the compute shader

@@ -6,7 +6,6 @@ float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
 
 float4 _DirectionalLight;
-
 float2 _PixelOffset;
 
 Texture2D<float4> _SkyboxTexture;
@@ -24,9 +23,6 @@ struct Sphere
 
 StructuredBuffer<Sphere> _Spheres;
 
-
-//-------------------------------------
-//- RAY
 
 struct Ray
 {
@@ -58,10 +54,6 @@ Ray CreateCameraRay(float2 uv)
     return CreateRay(origin, direction);
 }
 
-
-//-------------------------------------
-//- RAYHIT
-
 struct RayHit
 {
     float3 position;
@@ -82,9 +74,6 @@ RayHit CreateRayHit()
     return hit;
 }
 
-
-//-------------------------------------
-//- INTERSECTION
 
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 {
@@ -122,9 +111,6 @@ void IntersectSphere(Ray ray, inout RayHit bestHit, uint sphereIndex)
 }
 
 
-//-------------------------------------
-//- TRACE
-
 RayHit Trace(Ray ray)
 {
     RayHit bestHit = CreateRayHit();
@@ -141,8 +127,6 @@ RayHit Trace(Ray ray)
 }
 
 
-//-------------------------------------
-//- SHADE
 
 float3 Shade(inout Ray ray, RayHit hit)
 {
@@ -178,32 +162,30 @@ float3 Shade(inout Ray ray, RayHit hit)
 }
 
 
-//-------------------------------------
-//- KERNEL
 
 [numthreads(8,8,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
-    // Get the dimensions of the RenderTexture
-    uint width, height;
-    Result.GetDimensions(width, height);
+	// Get the dimensions of the RenderTexture
+	uint width, height;
+	Result.GetDimensions(width, height);
 
-    // Transform pixel to [-1,1] range
-    float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
+	// Transform pixel to [-1,1] range
+	float2 uv = float2((id.xy + _PixelOffset) / float2(width, height) * 2.0f - 1.0f);
 
-    // Get a ray for the UVs
-    Ray ray = CreateCameraRay(uv);
+	// Get a ray for the UVs
+	Ray ray = CreateCameraRay(uv);
 
-    // Trace and shade the ray
-    float3 result = float3(0, 0, 0);
-    for (int i = 0; i < 8; i++)
-    {
-        RayHit hit = Trace(ray);
-        result += ray.energy * Shade(ray, hit);
+	// Trace and shade the ray
+	float3 result = float3(0, 0, 0);
+	for (int i = 0; i < 8; i++)
+	{
+		RayHit hit = Trace(ray);
+		result += ray.energy * Shade(ray, hit);
 
-        if (!any(ray.energy))
-            break;
-    }
+		if (!any(ray.energy))
+			break;
+	}
 
-    Result[id.xy] = float4(result, 1);
+	Result[id.xy] = float4(result, 1);
 }
