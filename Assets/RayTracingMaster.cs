@@ -108,13 +108,11 @@ public class RayTracingMaster : MonoBehaviour
     {
         Random.InitState(SphereSeed);
         List<Sphere> spheres = new List<Sphere>();
-
-        // Add a number of random spheres
+        
         for (int i = 0; i < SpheresMax; i++)
         {
             Sphere sphere = new Sphere();
-
-            // Radius and radius
+            
             sphere.radius = SphereRadius.x + Random.value * (SphereRadius.y - SphereRadius.x);
             Vector2 randomPos = Random.insideUnitCircle * SpherePlacementRadius;
             sphere.position = new Vector3(randomPos.x, sphere.radius, randomPos.y);
@@ -204,29 +202,22 @@ public class RayTracingMaster : MonoBehaviour
         CreateComputeBuffer(ref _indexBuffer, _indices, 4);
     }
 
-    private static void CreateComputeBuffer<T>(ref ComputeBuffer buffer, List<T> data, int stride)
-        where T : struct
+    private static void CreateComputeBuffer<T>(ref ComputeBuffer buffer, List<T> data, int stride) where T : struct
     {
-        // Do we already have a compute buffer?
         if (buffer != null)
         {
-            // If no data or buffer doesn't match the given criteria, release it
             if (data.Count == 0 || buffer.count != data.Count || buffer.stride != stride)
             {
                 buffer.Release();
                 buffer = null;
             }
         }
-
         if (data.Count != 0)
         {
-            // If the buffer has been released or wasn't there to begin with, create it
             if (buffer == null)
             {
                 buffer = new ComputeBuffer(data.Count, stride);
             }
-
-            // Set data on the buffer
             buffer.SetData(data);
         }
     }

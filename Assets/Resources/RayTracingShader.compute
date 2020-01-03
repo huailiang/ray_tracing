@@ -6,7 +6,6 @@ float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
 
 float4 _DirectionalLight;
-
 float2 _PixelOffset;
 
 Texture2D<float4> _SkyboxTexture;
@@ -37,8 +36,6 @@ float rand()
     return result;
 }
 
-
-
 struct Sphere
 {
     float3 position;
@@ -52,7 +49,6 @@ struct Sphere
 StructuredBuffer<Sphere> _Spheres;
 
 
-
 struct MeshObject
 {
 	float4x4 localToWorldMatrix;
@@ -63,7 +59,6 @@ struct MeshObject
 StructuredBuffer<MeshObject> _MeshObjects;
 StructuredBuffer<float3> _Vertices;
 StructuredBuffer<int> _Indices;
-
 
 
 struct Ray
@@ -125,7 +120,6 @@ RayHit CreateRayHit()
 
 void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 {
-    // Calculate distance along the ray where the ground plane is intersected
     float t = -ray.origin.y / ray.direction.y;
     if (t > 0 && t < bestHit.distance)
     {
@@ -141,7 +135,6 @@ void IntersectGroundPlane(Ray ray, inout RayHit bestHit)
 
 void IntersectSphere(Ray ray, inout RayHit bestHit, Sphere sphere)
 {
-    // Calculate distance along the ray where the sphere is intersected
     float3 d = ray.origin - sphere.position;
     float p1 = -dot(ray.direction, d);
     float p2sqr = p1 * p1 - dot(d, d) + sphere.radius * sphere.radius;
