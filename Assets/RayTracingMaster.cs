@@ -21,6 +21,7 @@ public class RayTracingMaster : MonoBehaviour
     private uint _currentSample = 0;
     private ComputeBuffer _sphereBuffer;
     private List<Transform> _transformsToWatch = new List<Transform>();
+    private static readonly int Sample = Shader.PropertyToID("_Sample");
 
     struct Sphere
     {
@@ -48,8 +49,7 @@ public class RayTracingMaster : MonoBehaviour
 
     private void OnDisable()
     {
-        if (_sphereBuffer != null)
-            _sphereBuffer.Release();
+        _sphereBuffer?.Release();
     }
 
     private void Update()
@@ -65,7 +65,7 @@ public class RayTracingMaster : MonoBehaviour
             _lastFieldOfView = _camera.fieldOfView;
         }
 
-        foreach (Transform t in _transformsToWatch)
+        foreach (var t in _transformsToWatch)
         {
             if (t.hasChanged)
             {
@@ -119,8 +119,7 @@ public class RayTracingMaster : MonoBehaviour
             continue;
         }
 
-        if (_sphereBuffer != null)
-            _sphereBuffer.Release();
+        _sphereBuffer?.Release();
         if (spheres.Count > 0)
         {
             _sphereBuffer = new ComputeBuffer(spheres.Count, 56);
@@ -183,7 +182,7 @@ public class RayTracingMaster : MonoBehaviour
         // Blit the result texture to the screen
         if (_addMaterial == null)
             _addMaterial = new Material(Shader.Find("Hidden/AddShader"));
-        _addMaterial.SetFloat("_Sample", _currentSample);
+        _addMaterial.SetFloat(Sample, _currentSample);
         Graphics.Blit(_target, _converged, _addMaterial);
         Graphics.Blit(_converged, destination);
         _currentSample++;
