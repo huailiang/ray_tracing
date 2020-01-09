@@ -3,6 +3,7 @@
 [GPU Ray Tracing in Unity – Part 1][i1]
 
 * 光线追踪 
+* 阴影
 
 <img src="img/sample.jpg">
 
@@ -17,6 +18,16 @@
 * 支持对Mesh射线相交算法
 
 
+## Usage
+
+克隆对应的仓库， 然后切换对应的分支
+
+```sh
+git clone https://github.com/huailiang/ray_tracing.git
+cd ray_tracing
+# 切換分支（Option）
+git checkout pt2
+```
 
 
 ## 射线相交算法
@@ -59,7 +70,7 @@ bool IntersectSphere(Ray ray, float3 position,float radius,inout float t) {
 
 射线，一个点从起点o开始，沿着方向D移动任意长度，得到终点R，根据t值的不同，得到的R值也不同，所有这些不同的R值便构成了整条射线，比如下面的射线，起点是P0，方向是u，p0 + tu也就构成了整条射线。
 
-<br><img src='image/triger.jpg'><br>
+<br><img src='image/triger.jpg'>
 <br><img src='image/triger2.jpg'><br>
 
 
