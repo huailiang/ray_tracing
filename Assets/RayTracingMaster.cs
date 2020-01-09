@@ -149,8 +149,7 @@ public class RayTracingMaster : MonoBehaviour
         }
 
         // Assign to compute buffer
-        if (_sphereBuffer != null)
-            _sphereBuffer.Release();
+        _sphereBuffer?.Release();
         if (spheres.Count > 0)
         {
             _sphereBuffer = new ComputeBuffer(spheres.Count, 56);
@@ -167,8 +166,6 @@ public class RayTracingMaster : MonoBehaviour
 
         _meshObjectsNeedRebuilding = false;
         _currentSample = 0;
-
-        // Clear all lists
         _meshObjects.Clear();
         _vertices.Clear();
         _indices.Clear();

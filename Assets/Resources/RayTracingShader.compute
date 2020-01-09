@@ -4,7 +4,6 @@ RWTexture2D<float4> Result;
 
 float4x4 _CameraToWorld;
 float4x4 _CameraInverseProjection;
-
 float4 _DirectionalLight;
 float2 _PixelOffset;
 
