@@ -71,7 +71,7 @@ bool IntersectSphere(Ray ray, float3 position,float radius,inout float t) {
 射线，一个点从起点o开始，沿着方向D移动任意长度，得到终点R，根据t值的不同，得到的R值也不同，所有这些不同的R值便构成了整条射线，比如下面的射线，起点是P0，方向是u，p0 + tu也就构成了整条射线。
 
 <br><img src='image/triger.jpg'>
-<br><img src='image/triger2.jpg'><br>
+<img src='image/triger2.jpg'><br>
 
 
 ```c++
